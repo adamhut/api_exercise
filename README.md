@@ -2,7 +2,7 @@
 
 A Laravel-based API wrapper for the New York Times Best Sellers API that provides endpoints to search and retrieve best-selling books information.
 
-## 📋Features
+## Features
 
 - Search best sellers by ISBN (single or multiple)
 - Filter by author and title
