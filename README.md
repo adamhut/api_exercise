@@ -14,7 +14,7 @@ A Laravel-based API wrapper for the New York Times Best Sellers API that provide
 ## Requirements
 
 - PHP 8.2 or higher
-- Laravel 10.x
+- Laravel 11.x
 - Composer
 - New York Times API Key
 
@@ -46,7 +46,7 @@ NEW_YORK_TIMES_API_KEY=your-api-key-here
 
 ### API Endpoints
 
-#### GET /api/best-sellers
+#### GET /api/1/nyt/best-sellers
 
 Search for best-selling books with various filters.
 
@@ -61,7 +61,7 @@ Search for best-selling books with various filters.
 
 **Example Request:**
 ```http
-GET /api/best-sellers?isbn[]=0593836324&author=John%20Doe&offset=20
+GET /api/1/nyt/best-sellers?isbn[]=0593836324&author=John%20Doe&offset=20
 ```
 
 **Success Response:**
