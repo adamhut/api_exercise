@@ -5,8 +5,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 
-use function Pest\Laravel\withoutExceptionHandling;
-
 beforeEach(function () {
     // Set up mock configs
     Config::set('services.new_york_times.url', 'https://api.nytimes.com');
@@ -20,7 +18,7 @@ test('successfully fetches best sellers with all valid parameters', function () 
             'results' => [
                 ['title' => 'Test Book']
             ]
-        ], 200)
+        ], Response::HTTP_OK)
     ]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?' . http_build_query([
@@ -30,7 +28,7 @@ test('successfully fetches best sellers with all valid parameters', function () 
         'offset' => 20
     ]));
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) {
         return $request['isbn'] === '0593836324;0593836325' &&
@@ -49,10 +47,10 @@ test('validates single ISBN format - 10 digits', function () {
             'results' => [
                 ['title' => 'Test Book']
             ]
-        ], 200)
+        ], Response::HTTP_OK)
     ]);
     $response = $this->getJson('/api/1/nyt/best-sellers?isbn[]=1234567890');
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 });
 
 test('validates single ISBN format - 13 digits', function () {
@@ -62,15 +60,15 @@ test('validates single ISBN format - 13 digits', function () {
             'results' => [
                 ['title' => 'Test Book']
             ]
-        ], 200)
+        ], Response::HTTP_OK)
     ]);
     $response = $this->getJson('/api/1/nyt/best-sellers?isbn[]=1234567890123');
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 });
 
 test('rejects invalid ISBN format', function ($isbn) {
     $response = $this->getJson("/api/1/nyt/best-sellers?isbn[]=$isbn");
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['isbn.0']);
 })->with([
     '123456789', // Too short
@@ -86,14 +84,14 @@ test('handles multiple valid ISBNs', function () {
             'results' => [
                 ['title' => 'Test Book']
             ]
-        ], 200)
+        ], Response::HTTP_OK)
     ]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?' . http_build_query([
         'isbn' => ['1234567890', '1234567890123']
     ]));
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) {
         return $request['isbn'] === '1234567890;1234567890123';
@@ -103,11 +101,11 @@ test('handles multiple valid ISBNs', function () {
 // Author Validation Tests
 
 test('validates author parameter', function ($author) {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson("/api/1/nyt/best-sellers?author=$author");
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) use ($author) {
         return $request['author'] === $author;
@@ -122,18 +120,16 @@ test('validates author parameter', function ($author) {
 test('rejects invalid author parameter', function () {
     $response = $this->getJson('/api/1/nyt/best-sellers?author=' . str_repeat('a', 256));
 
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['author']);
 });
 
-// Title Validation Tests
-
 test('validates title parameter', function ($title) {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson("/api/1/nyt/best-sellers?title=$title");
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) use ($title) {
         return $request['title'] === $title;
@@ -148,18 +144,18 @@ test('validates title parameter', function ($title) {
 test('rejects invalid title parameter', function () {
     $response = $this->getJson('/api/1/nyt/best-sellers?title=' . str_repeat('a', 256));
 
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['title']);
 });
 
 // Offset Validation Tests
 
 test('validates offset parameter', function ($offset) {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson("/api/1/nyt/best-sellers?offset=$offset");
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) use ($offset) {
         return (int)$request['offset'] === $offset;
@@ -176,7 +172,7 @@ test('rejects invalid offset values', function ($offset) {
 
     $response = $this->getJson("/api/1/nyt/best-sellers?offset=$offset");
 
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['offset']);
 })->with([
     -20, // Negative number
@@ -188,11 +184,11 @@ test('rejects invalid offset values', function ($offset) {
 // Optional Parameters Tests
 
 test('all parameters are optional', function () {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers');
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 });
 
 // Combination Tests
@@ -205,7 +201,7 @@ test('handles multiple parameters with some invalid', function () {
         'offset' => 15
     ]));
 
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['isbn.1', 'author', 'offset']);
 });
 
@@ -218,50 +214,42 @@ test('logs validation errors', function () {
         'offset' => 'invalid'
     ]));
 
-    $response->assertStatus(422);
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
 });
 
 test('handles empty array parameters', function () {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?isbn[]=');
 
-    $response->assertStatus(422)
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ->assertJsonValidationErrors(['isbn.0']);
 });
 
-// test('handles malformed JSON requests', function () {
-//     $response = $this->json('GET', '/api/1/nyt/best-sellers', [], [
-//         'Content-Type' => 'application/json',
-//         'Accept' => 'application/json'
-//     ]);
-
-//     $response->assertStatus(200);
-// });
 
 
 test('handles large number of ISBN values', function () {
     $isbns = array_fill(0, 100, '1234567890');
 
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?' . http_build_query([
         'isbn' => $isbns
     ]));
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 });
 
 // Special Characters Handling
 
 test('handles special characters in parameters', function ($param) {
-    Http::fake(['*' => Http::response(['status' => 'OK'], 200)]);
+    Http::fake(['*' => Http::response(['status' => 'OK'], Response::HTTP_OK)]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?' . http_build_query([
         'title' => $param
     ]));
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 })->with([
     'Title & More',
     'Title: Subtitle',
@@ -320,7 +308,7 @@ test('validates request parameters', function () {
     // Test with invalid ISBN format
     $response = $this->getJson('/api/1/nyt/best-sellers?isbn[]=invalid-isbn');
 
-    $response->assertStatus(422);
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
 });
 
 test('successfully handles additional parameters', function () {
@@ -328,12 +316,12 @@ test('successfully handles additional parameters', function () {
         '*' => Http::response([
             'status' => 'OK',
             'results' => []
-        ], 200)
+        ], Response::HTTP_OK)
     ]);
 
     $response = $this->getJson('/api/1/nyt/best-sellers?author=John Doe&title=Test Book&offset=20');
 
-    $response->assertStatus(200);
+    $response->assertStatus(Response::HTTP_OK);
 
     Http::assertSent(function ($request) {
         return $request['author'] === 'John Doe' &&
